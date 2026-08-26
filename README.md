@@ -2,7 +2,7 @@
 
 > **ВНИМАНИЕ: это временный непроизводственный preview для ручной проверки DreamBoard v14.**
 
-- **Source commit:** `5614b15fd8f927791b5b3a20f74c98aa8c28a6b6` (ветка `v14-reliability`)
+- **Source commit:** `ef3a7383106a20fc1ccce174efeacf296242b4f2` (ветка `v14-reliability`)
 - **Production** находится в другом репозитории (`Kseles-content/dreamboard`, https://kseles-content.github.io/dreamboard/) и **не изменён**.
 - Этот preview предназначен **только для ручного QA** (экспорт/импорт JSON-бэкапа, проверка PWA).
 - **Не использовать как постоянное хранилище данных** — любые данные, созданные здесь, могут быть потеряны.
