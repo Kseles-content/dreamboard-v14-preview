@@ -1,13 +1,9 @@
-# ⚠️ DreamBoard v14 — временный QA preview (не production)
+# Dreamboard v14 — временный preview (QA)
 
-> **ВНИМАНИЕ: это временный непроизводственный preview для ручной проверки DreamBoard v14.**
+⚠️ **Временный preview для ручной проверки.** Точная копия ветки
+`v14-reliability` исходного репозитория Kseles-content/dreamboard
+в момент **source commit `aa834c8188d984d3f5594c9c5ac5356a42c22a08`**.
 
-- **Source commit:** `ef3a7383106a20fc1ccce174efeacf296242b4f2` (ветка `v14-reliability`)
-- **Production** находится в другом репозитории (`Kseles-content/dreamboard`, https://kseles-content.github.io/dreamboard/) и **не изменён**.
-- Этот preview предназначен **только для ручного QA** (экспорт/импорт JSON-бэкапа, проверка PWA).
-- **Не использовать как постоянное хранилище данных** — любые данные, созданные здесь, могут быть потеряны.
-- После завершения проверки этот репозиторий будет **архивирован или удалён** отдельной командой.
-
-## Что здесь
-
-Статическое приложение DreamBoard v14 (vanilla JS), извлечённое через `git archive` из указанного commit без Git-истории, тестов и серверной конфигурации.
+- Production (https://kseles-content.github.io/dreamboard/) **не изменён**
+- Этот репозиторий будет архивирован/удалён после ручного QA
+- Исходный код: https://github.com/Kseles-content/dreamboard
