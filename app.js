@@ -2339,8 +2339,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8b. ПОЛНОЭКРАННЫЙ ПРОСМОТР ЦЕЛИ (READ-ONLY)
     // ==========================================================================
     // Открывается по кнопке «Развернуть» или двойному клику (desktop).
-    // Ничего не записывает в storage/IDB: только чтение dream-объекта и
-    // вывод через textContent/безопасные DOM API.
+    // Нативный <dialog> с showModal(): находится в browser top layer — выше
+    // header и всех stacking contexts. Fullscreen — через requestFullscreen()
+    // в том же user gesture; при ошибке/отсутствии Fullscreen API остаётся
+    // top-layer dialog fallback. Ничего не записывает в storage/IDB.
 
     const dreamViewModal = document.getElementById('dream-view-modal');
     const dreamViewCloseBtn = document.getElementById('dream-view-close');
@@ -2387,39 +2389,78 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        dreamViewModal.classList.add('active');
-        dreamViewModal.setAttribute('aria-hidden', 'false');
+        // Native <dialog> в browser top layer (выше header и всех stacking contexts).
+        if (!dreamViewModal.open) {
+            dreamViewModal.showModal();
+        }
         document.body.style.overflow = 'hidden';
+
+        // Fullscreen в рамках того же user gesture. Ошибки/отсутствие API
+        // не фатальны: dialog остаётся в top layer (fallback).
+        requestFullscreenForViewer(dreamViewModal);
 
         // Начальный фокус — кнопка закрытия.
         if (dreamViewCloseBtn) dreamViewCloseBtn.focus();
     }
 
+    // requestFullscreen() возвращает Promise — rejection обрабатывается через
+    // .catch(() => {}), чтобы не возникало unhandledrejection; sync-ошибки
+    // (API недоступно/не в user gesture) тоже не фатальны. При любой ошибке
+    // viewer остаётся открытым в browser top layer (fallback).
+    function requestFullscreenForViewer(viewerEl) {
+        if (!viewerEl || typeof viewerEl.requestFullscreen !== 'function') return;
+        let fsPromise;
+        try {
+            fsPromise = viewerEl.requestFullscreen();
+        } catch (err) {
+            return; // Fullscreen API недоступно/отклонено — не фатально
+        }
+        if (fsPromise && typeof fsPromise.then === 'function') {
+            fsPromise.catch(() => { /* Fullscreen отклонён — top-layer dialog fallback */ });
+        }
+    }
+
     function closeDreamViewModal() {
         if (!dreamViewModal) return;
-        dreamViewModal.classList.remove('active');
-        dreamViewModal.setAttribute('aria-hidden', 'true');
+        // Выход из fullscreen только если именно этот viewer — fullscreen element.
+        if (document.fullscreenElement === dreamViewModal) {
+            try {
+                const fsExit = document.exitFullscreen();
+                if (fsExit && typeof fsExit.catch === 'function') {
+                    fsExit.catch(() => { /* не фатально */ });
+                }
+            } catch (err) {
+                /* не фатально */
+            }
+        }
+        if (dreamViewModal.open) {
+            dreamViewModal.close();
+        }
         document.body.style.overflow = '';
         // Возврат фокуса на элемент, открывший просмотр.
-        if (dreamViewTrigger && typeof dreamViewTrigger.focus === 'function') {
-            dreamViewTrigger.focus();
-        }
+        const trigger = dreamViewTrigger;
         dreamViewTrigger = null;
+        if (trigger && typeof trigger.focus === 'function') {
+            trigger.focus();
+        }
     }
 
     if (dreamViewModal) {
         if (dreamViewCloseBtn) {
             dreamViewCloseBtn.addEventListener('click', closeDreamViewModal);
         }
-        // Клик по backdrop (вне .modal-content) закрывает.
+        // Клик по backdrop (нативный <dialog>: e.target === dialog вне контента) закрывает.
         dreamViewModal.addEventListener('click', (e) => {
             if (e.target === dreamViewModal) closeDreamViewModal();
         });
-        // Escape закрывает просмотр.
-        dreamViewModal.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                e.stopPropagation();
-                closeDreamViewModal();
+        // Escape обрабатывается нативным <dialog> (cancel → close); close-событие
+        // выполняет очистку (overflow, focus, exitFullscreen-страховку).
+        dreamViewModal.addEventListener('close', closeDreamViewModal);
+        // fullscreenchange: при выходе из fullscreen (например, ESC) dialog остаётся
+        // открытым в top layer — контент продолжает быть видимым и доступным.
+        document.addEventListener('fullscreenchange', () => {
+            if (dreamViewModal && dreamViewModal.open && !document.fullscreenElement) {
+                // fullscreen завершён; viewer продолжает работать как top-layer fallback
             }
         });
     }
@@ -2432,11 +2473,7 @@ document.addEventListener('DOMContentLoaded', () => {
             trashModal.classList.remove('active');
             trashModal.setAttribute('aria-hidden', 'true');
         }
-        if (dreamViewModal) {
-            dreamViewModal.classList.remove('active');
-            dreamViewModal.setAttribute('aria-hidden', 'true');
-            dreamViewTrigger = null;
-        }
+        closeDreamViewModal();
     }));
 
     // Вкладки выбора картинки
@@ -2792,6 +2829,55 @@ document.addEventListener('DOMContentLoaded', () => {
     exitManifestBtn.addEventListener('click', () => {
         exitManifestMode();
     });
+
+    // ==========================================================================
+    // 2d. МОБИЛЬНОЕ МЕНЮ (сворачивание/раскрытие)
+    // ==========================================================================
+    // Состояние хранится ТОЛЬКО в памяти вкладки (переменная) — без
+    // localStorage/sessionStorage/IDB. По умолчанию свёрнуто только в коротком
+    // landscape (max-height: 500px); desktop не затрагивается (кнопки скрыты CSS).
+
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileMenuPanel = document.getElementById('mobile-menu-panel');
+    const mobileManifestBtn = document.getElementById('mobile-manifest-btn');
+    let mobileMenuCollapsed = false; // состояние только в памяти вкладки
+
+    function applyMobileMenuState() {
+        if (!mobileMenuToggle) return;
+        const header = document.querySelector('.app-header');
+        if (header) {
+            header.classList.toggle('menu-collapsed', mobileMenuCollapsed);
+        }
+        mobileMenuToggle.setAttribute('aria-expanded', String(!mobileMenuCollapsed));
+        mobileMenuToggle.setAttribute('aria-label', mobileMenuCollapsed ? 'Развернуть меню' : 'Свернуть меню');
+        mobileMenuToggle.title = mobileMenuCollapsed ? 'Развернуть меню' : 'Свернуть меню';
+    }
+
+    function initMobileMenu() {
+        if (!mobileMenuToggle) return;
+        // По умолчанию свёрнуто ТОЛЬКО в коротком landscape (max-height: 500px).
+        const shortLandscapeQuery = '(orientation: landscape) and (max-height: 500px)';
+        const shortLandscape = typeof window.matchMedia === 'function'
+            ? window.matchMedia(shortLandscapeQuery)
+            : null;
+        mobileMenuCollapsed = !!(shortLandscape && shortLandscape.matches);
+        applyMobileMenuState();
+
+        mobileMenuToggle.addEventListener('click', () => {
+            // Переключение только в памяти вкладки — никаких записей в storage/IDB.
+            mobileMenuCollapsed = !mobileMenuCollapsed;
+            applyMobileMenuState();
+        });
+    }
+    initMobileMenu();
+
+    // Компактная кнопка «Режим Манифестации» (видна при свёрнутом мобильном меню)
+    // использует ту же логику, что и основная кнопка в .header-actions.
+    if (mobileManifestBtn && startManifestBtn) {
+        mobileManifestBtn.addEventListener('click', () => {
+            startManifestBtn.click();
+        });
+    }
 
     function enterManifestMode(activeDreams) {
         initAudioContext();
