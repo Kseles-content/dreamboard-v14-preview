@@ -47,6 +47,9 @@
         if (code.indexOf('email_not_confirmed') !== -1) return 'Подтвердите email по ссылке из письма.';
         if (code.indexOf('over_request_rate_limit') !== -1) return 'Слишком много попыток. Попробуйте позже.';
         if (code.indexOf('captcha') !== -1) return 'Проверка безопасности не пройдена. Повторите её.';
+        if (code.indexOf('weak_password') !== -1 || code.indexOf('password_too_short') !== -1) {
+            return 'Пароль слишком простой. Используйте не менее 10 символов, буквы разного регистра, цифры и специальный знак.';
+        }
         return fallback || 'Не удалось выполнить запрос. Попробуйте позже.';
     }
 
@@ -134,8 +137,11 @@
         });
         var service = createAuthService(client, config, win.location);
         var form = win.document.getElementById('auth-form');
+        var modeTabs = win.document.querySelector('.auth-mode-tabs');
         var email = win.document.getElementById('auth-email');
+        var emailLabel = win.document.getElementById('auth-email-label');
         var password = win.document.getElementById('auth-password');
+        var passwordLabel = win.document.getElementById('auth-password-label');
         var passwordField = win.document.getElementById('auth-password-field');
         var passwordToggle = win.document.getElementById('auth-password-toggle');
         var message = win.document.getElementById('auth-message');
@@ -145,6 +151,7 @@
         var captchaInput = win.document.getElementById('auth-captcha-token');
         var captchaContainer = win.document.getElementById('auth-turnstile');
         var mode = 'signin';
+        var signedIn = false;
         var opener = null;
 
         function setMessage(text, kind) {
@@ -152,11 +159,30 @@
             message.textContent = text || '';
             message.dataset.kind = kind || '';
         }
+        function applyView() {
+            var recovery = mode === 'recovery';
+            if (sessionPanel) sessionPanel.hidden = !signedIn || recovery;
+            if (form) form.hidden = signedIn && !recovery;
+            if (modeTabs) modeTabs.hidden = signedIn || recovery;
+        }
         function setMode(next) {
             mode = next;
-            if (passwordField) passwordField.hidden = next === 'reset';
-            else if (password) password.hidden = next === 'reset';
-            if (password) password.type = 'password';
+            var reset = next === 'reset';
+            var recovery = next === 'recovery';
+            if (emailLabel) emailLabel.hidden = recovery;
+            if (email) {
+                email.hidden = recovery;
+                email.required = !recovery;
+            }
+            if (passwordLabel) passwordLabel.hidden = reset;
+            if (passwordField) passwordField.hidden = reset;
+            else if (password) password.hidden = reset;
+            if (captchaContainer) captchaContainer.hidden = recovery;
+            if (password) {
+                password.type = 'password';
+                password.required = !reset;
+                password.autocomplete = next === 'signin' ? 'current-password' : 'new-password';
+            }
             if (passwordToggle) {
                 passwordToggle.setAttribute('aria-pressed', 'false');
                 passwordToggle.setAttribute('aria-label', 'Показать пароль');
@@ -165,13 +191,14 @@
             var submit = win.document.getElementById('auth-submit-btn');
             if (submit) submit.textContent = next === 'signup' ? 'Создать аккаунт' : next === 'reset' ? 'Отправить ссылку' : next === 'recovery' ? 'Сохранить новый пароль' : 'Войти';
             setMessage('', '');
+            applyView();
         }
         function showSession(session) {
-            var signedIn = !!(session && session.user);
-            if (sessionPanel) sessionPanel.hidden = !signedIn;
+            signedIn = !!(session && session.user);
             if (sessionStatus) sessionStatus.textContent = signedIn
                 ? 'Выполнен вход: ' + String(session.user.email || 'аккаунт') + '. Синхронизация выключена.' : '';
             if (button) button.dataset.signedIn = signedIn ? 'true' : 'false';
+            applyView();
         }
         function closeDialog() {
             if (dialog && dialog.open) dialog.close();
@@ -202,7 +229,9 @@
             event.preventDefault();
             var mail = email ? email.value : '';
             var pass = password ? password.value : '';
-            var invalid = validateCredentials(mail, pass, mode !== 'reset');
+            var invalid = mode === 'recovery'
+                ? (String(pass || '').length < 8 ? 'Пароль должен содержать не менее 8 символов.' : '')
+                : validateCredentials(mail, pass, mode !== 'reset');
             if (invalid) return setMessage(invalid, 'error');
             var token = captchaInput ? captchaInput.value : '';
             var task = mode === 'signup' ? service.signUp(mail, pass, token)
@@ -216,6 +245,7 @@
                 if (error && error.code === 'captcha_required') setMessage('Подтвердите, что вы не робот.', 'error');
                 else setMessage(safeMessage(error), 'error');
             }).finally(function () {
+                if (mode === 'recovery') return;
                 if (captchaInput) captchaInput.value = '';
                 if (win.turnstile && typeof win.turnstile.reset === 'function' && captchaContainer) {
                     win.turnstile.reset(captchaContainer);
