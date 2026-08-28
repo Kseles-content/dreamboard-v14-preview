@@ -46,6 +46,7 @@
         if (code.indexOf('invalid_credentials') !== -1) return 'Неверный email или пароль.';
         if (code.indexOf('email_not_confirmed') !== -1) return 'Подтвердите email по ссылке из письма.';
         if (code.indexOf('over_request_rate_limit') !== -1) return 'Слишком много попыток. Попробуйте позже.';
+        if (code.indexOf('captcha') !== -1) return 'Проверка безопасности не пройдена. Повторите её.';
         return fallback || 'Не удалось выполнить запрос. Попробуйте позже.';
     }
 
@@ -56,8 +57,13 @@
         return Object.freeze({
             getSession: function () { return client.auth.getSession(); },
             onAuthStateChange: function (callback) { return client.auth.onAuthStateChange(callback); },
-            signIn: function (email, password) {
-                return client.auth.signInWithPassword({ email: String(email).trim(), password: String(password) });
+            signIn: function (email, password, captchaToken) {
+                if (config.requireCaptcha && !captchaToken) return Promise.reject({ code: 'captcha_required' });
+                return client.auth.signInWithPassword({
+                    email: String(email).trim(),
+                    password: String(password),
+                    options: { captchaToken: captchaToken || undefined }
+                });
             },
             signUp: function (email, password, captchaToken) {
                 if (config.requireCaptcha && !captchaToken) return Promise.reject({ code: 'captcha_required' });
@@ -201,13 +207,18 @@
             var task = mode === 'signup' ? service.signUp(mail, pass, token)
                 : mode === 'reset' ? service.resetPassword(mail, token)
                     : mode === 'recovery' ? service.updatePassword(pass)
-                    : service.signIn(mail, pass);
+                    : service.signIn(mail, pass, token);
             task.then(function (result) {
                 if (result && result.error) throw result.error;
                 setMessage(mode === 'reset' ? 'Проверьте почту.' : mode === 'signup' ? 'Проверьте почту для подтверждения.' : mode === 'recovery' ? 'Новый пароль сохранён.' : 'Вход выполнен. Синхронизация выключена.', 'success');
             }).catch(function (error) {
                 if (error && error.code === 'captcha_required') setMessage('Подтвердите, что вы не робот.', 'error');
                 else setMessage(safeMessage(error), 'error');
+            }).finally(function () {
+                if (captchaInput) captchaInput.value = '';
+                if (win.turnstile && typeof win.turnstile.reset === 'function' && captchaContainer) {
+                    win.turnstile.reset(captchaContainer);
+                }
             });
         });
         if (signOut) signOut.addEventListener('click', function () {
