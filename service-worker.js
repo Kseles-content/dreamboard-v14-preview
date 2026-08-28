@@ -2,6 +2,8 @@
    DREAMBOARD - SERVICE WORKER (PWA OFFLINE CACHE)
    ========================================================================== */
 
+// Preview refresh marker: auth input visibility fix (2026-08-28).
+
 // Runtime-имя кэша ИЗОЛИРОВАНО по service-worker scope: один и тот же
 // source-файл вычисляет разные cache names во время исполнения.
 //   production scope /dreamboard/            -> dreamboard-dreamboard-v14
