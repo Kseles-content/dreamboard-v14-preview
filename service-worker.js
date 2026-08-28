@@ -2,7 +2,7 @@
    DREAMBOARD - SERVICE WORKER (PWA OFFLINE CACHE)
    ========================================================================== */
 
-// Preview refresh marker: auth input, password toggle, and sign-in CAPTCHA fixes (2026-08-28).
+// Preview refresh marker: auth input, CAPTCHA, and recovery redirect fixes (2026-08-28).
 
 // Runtime-имя кэша ИЗОЛИРОВАНО по service-worker scope: один и тот же
 // source-файл вычисляет разные cache names во время исполнения.

@@ -117,6 +117,7 @@
         var config = normalizeConfig(win.DreamBoardConfig);
         var button = win.document.getElementById('account-toggle-btn');
         var dialog = win.document.getElementById('auth-modal');
+        var recoveryRequested = /(?:^|[&#])type=recovery(?:&|$)/.test(String(win.location && win.location.hash || ''));
         if (!config.authEnabled) return { enabled: false };
         if (button) button.hidden = false;
         var check = validateConfig(config);
@@ -237,6 +238,11 @@
                 if (password) password.focus();
             }
         });
+        if (recoveryRequested) {
+            setMode('recovery');
+            if (dialog && !dialog.open) dialog.showModal();
+            if (password) password.focus();
+        }
         if (config.requireCaptcha) mountTurnstile(win, config.turnstileSiteKey, captchaContainer, captchaInput);
         return { enabled: true, ready: true, client: client, service: service };
     }
