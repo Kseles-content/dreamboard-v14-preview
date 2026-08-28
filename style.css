@@ -3192,6 +3192,41 @@ html.performance-lite .breath-circle-inner.hold {
     box-shadow: 0 0 0 1000px #0a0814 inset;
 }
 
+.auth-password-field { position: relative; }
+.auth-password-field[hidden] { display: none; }
+.auth-password-field #auth-password { padding-right: 52px; }
+
+.auth-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.auth-password-toggle:hover,
+.auth-password-toggle:focus-visible {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-password-toggle:focus-visible {
+    outline: 2px solid #00f2fe;
+    outline-offset: -2px;
+}
+
+.auth-password-toggle[aria-pressed="true"] .auth-password-toggle-slash { display: none; }
+
 .auth-turnstile:empty {
     display: none;
 }

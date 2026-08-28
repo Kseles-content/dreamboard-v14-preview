@@ -536,7 +536,16 @@
                 <label for="auth-email">Email</label>
                 <input id="auth-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" required>
                 <label for="auth-password">Пароль</label>
-                <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>
+                <div id="auth-password-field" class="auth-password-field">
+                    <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>
+                    <button id="auth-password-toggle" class="auth-password-toggle" type="button" aria-label="Показать пароль" aria-pressed="false" title="Показать пароль">
+                        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path class="auth-password-toggle-slash" d="M4 4l16 16"></path>
+                        </svg>
+                    </button>
+                </div>
                 <input id="auth-captcha-token" type="hidden" value="">
                 <div id="auth-turnstile" class="auth-turnstile" aria-label="Проверка безопасности"></div>
                 <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>

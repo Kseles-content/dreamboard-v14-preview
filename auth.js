@@ -129,6 +129,8 @@
         var form = win.document.getElementById('auth-form');
         var email = win.document.getElementById('auth-email');
         var password = win.document.getElementById('auth-password');
+        var passwordField = win.document.getElementById('auth-password-field');
+        var passwordToggle = win.document.getElementById('auth-password-toggle');
         var message = win.document.getElementById('auth-message');
         var sessionPanel = win.document.getElementById('auth-session-panel');
         var sessionStatus = win.document.getElementById('auth-session-status');
@@ -145,7 +147,14 @@
         }
         function setMode(next) {
             mode = next;
-            if (password) password.hidden = next === 'reset';
+            if (passwordField) passwordField.hidden = next === 'reset';
+            else if (password) password.hidden = next === 'reset';
+            if (password) password.type = 'password';
+            if (passwordToggle) {
+                passwordToggle.setAttribute('aria-pressed', 'false');
+                passwordToggle.setAttribute('aria-label', 'Показать пароль');
+                passwordToggle.title = 'Показать пароль';
+            }
             var submit = win.document.getElementById('auth-submit-btn');
             if (submit) submit.textContent = next === 'signup' ? 'Создать аккаунт' : next === 'reset' ? 'Отправить ссылку' : next === 'recovery' ? 'Сохранить новый пароль' : 'Войти';
             setMessage('', '');
@@ -169,6 +178,14 @@
         });
         var close = win.document.getElementById('auth-close-btn');
         if (close) close.addEventListener('click', closeDialog);
+        if (password && passwordToggle) passwordToggle.addEventListener('click', function () {
+            var visible = password.type === 'password';
+            password.type = visible ? 'text' : 'password';
+            passwordToggle.setAttribute('aria-pressed', visible ? 'true' : 'false');
+            passwordToggle.setAttribute('aria-label', visible ? 'Скрыть пароль' : 'Показать пароль');
+            passwordToggle.title = visible ? 'Скрыть пароль' : 'Показать пароль';
+            password.focus();
+        });
         if (dialog) dialog.addEventListener('click', function (event) { if (event.target === dialog) closeDialog(); });
         ['signin', 'signup', 'reset'].forEach(function (name) {
             var control = win.document.querySelector('[data-auth-mode="' + name + '"]');
