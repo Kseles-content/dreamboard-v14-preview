@@ -3079,20 +3079,9 @@ html.performance-lite *:not(.toast):not(.toast *) {
     animation: none !important;
 }
 
-/* Ken Burns и дыхательная анимация: без scale и animated box-shadow,
-   фазовый текст и лёгкий opacity сохраняются */
+/* Ken Burns выключен; функциональный гид дыхания настроен отдельно ниже. */
 html.performance-lite .manifest-slide.active .manifest-slide-img {
     animation: none !important;
-}
-html.performance-lite .breath-circle-inner.inhale,
-html.performance-lite .breath-circle-inner.exhale {
-    transform: none !important;
-    box-shadow: none !important;
-    opacity: 0.85;
-}
-html.performance-lite .breath-circle-inner.hold {
-    transform: none !important;
-    box-shadow: none !important;
 }
 /* Stage 7B: optional account UI. Hidden while the production feature flag is off. */
 .account-toggle-btn[hidden] {

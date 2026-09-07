@@ -22,7 +22,7 @@ var SCOPE_NAME = (function () {
     return normalizeScopeName(location.pathname.replace(/[^/]*$/, ''));
 })();
 
-var CACHE_NAME = 'dreamboard-' + SCOPE_NAME + '-v15';
+var CACHE_NAME = 'dreamboard-' + SCOPE_NAME + '-v16';
 
 // Старые scoped-версии ТЕКУЩЕГО scope: dreamboard-<scope>-v<digits>
 var SCOPE_OLD_RE = new RegExp('^dreamboard-' + SCOPE_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '-v\\d+$');
@@ -36,6 +36,7 @@ const PRECACHE_URLS = [
     './',
     './index.html',
     './style.css',
+    './manifest-breath.css',
     './storage.js',
     './backup.js',
     './import.js',
